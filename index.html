@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cropine — Batch resize & convert images, 100% in your browser</title>
+<style>
+ :root{--acc:#1f9d78;--bg:#0d0f10;--txt:#e8ebec;--mut:#95a1a5}
+ *{box-sizing:border-box;margin:0}body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--txt)}
+ .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+ header{padding:20px 0;display:flex;align-items:center;gap:10px}header b{font-size:20px}
+ .cta{background:var(--acc);color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block}
+ .cta.sec{background:#1a1e20;border:1px solid #2a3033}
+ .hero{text-align:center;padding:70px 0 40px}
+ .hero h1{font-size:clamp(32px,5vw,54px);line-height:1.1;letter-spacing:-1px;margin-bottom:18px}
+ .hero p{font-size:20px;color:var(--mut);max-width:660px;margin:0 auto 30px}
+ .badge{display:inline-block;background:#12211c;border:1px solid #24463a;color:#8fd8bf;padding:6px 14px;border-radius:20px;font-size:13px;margin-bottom:24px}
+ .demo{margin:40px auto;border-radius:14px;border:1px solid #222;background:linear-gradient(135deg,#134e37,#1f9d78);padding:60px;text-align:center;color:#fff}
+ .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:50px 0}
+ .card{background:#111517;border:1px solid #1d2325;border-radius:12px;padding:24px}
+ .card h3{margin-bottom:8px}.card p{color:var(--mut);font-size:15px}
+ .price{text-align:center;padding:50px 0}
+ .plan{max-width:400px;margin:20px auto;background:#111517;border:2px solid var(--acc);border-radius:16px;padding:34px}
+ .plan .amt{font-size:48px;font-weight:700}.plan .amt s{font-size:24px;color:var(--mut);font-weight:400}
+ .plan ul{list-style:none;text-align:left;margin:20px 0}.plan li{padding:6px 0}.plan li:before{content:"✓ ";color:#3fbf8f}
+ footer{text-align:center;color:var(--mut);padding:40px 0;font-size:14px}
+ .ltd{background:#122019;border:1px solid #24463a;border-radius:12px;padding:14px;color:#8fd8bf;font-size:14px;margin-top:16px}
+ @media(max-width:720px){.grid{grid-template-columns:1fr}}
+</style></head><body>
+<div class="wrap">
+ <header><b>◧ Cropine</b><span style="flex:1"></span>
+   <a class="cta sec" href="/app/">Open the app</a></header>
+
+ <section class="hero">
+   <span class="badge">◆ Lifetime deal — no subscription, ever</span>
+   <h1>Resize &amp; convert a whole folder<br>of images at once.</h1>
+   <p>Drop in your photos, pick every size you need, and export them all in one pass — social, web, custom, whatever. Converts HEIC too. 100% in your browser: nothing is uploaded, nothing leaves your device.</p>
+   <a class="cta" href="/app/">Try it free →</a>
+   <div class="demo"><div style="background:#111517;border-radius:8px;padding:34px;box-shadow:0 20px 60px rgba(0,0,0,.4);display:inline-block;color:#fff">drop a folder → every size, one zip</div></div>
+ </section>
+
+ <section class="grid">
+   <div class="card"><h3>📦 All sizes at once</h3><p>Pick as many presets as you want — every image exports to every size in a single pass. No more one-size-per-run.</p></div>
+   <div class="card"><h3>🔒 100% private</h3><p>Runs entirely on your device. Your photos are never uploaded to any server. Works offline.</p></div>
+   <div class="card"><h3>📱 HEIC, handled</h3><p>Drop iPhone HEIC files straight in — batch convert to JPG, PNG, or WebP without extra apps.</p></div>
+   <div class="card"><h3>🖼️ No distortion</h3><p>Pad-not-stretch fit keeps every aspect ratio intact. Or crop-to-fill when you want it edge-to-edge.</p></div>
+   <div class="card"><h3>⚡ Batch everything</h3><p>Custom sizes, format convert, quality control, batch rename patterns, one-click zip download.</p></div>
+   <div class="card"><h3>♾️ Yours forever</h3><p>One-time payment. No subscription. All future v1 updates included. Nothing to cancel.</p></div>
+ </section>
+
+ <section class="price">
+   <h2>One price. Forever.</h2>
+   <div class="plan">
+     <div class="amt"><s>$49</s> $29</div>
+     <div style="color:var(--mut)">lifetime license · one-time</div>
+     <ul>
+       <li>Unlimited batch size</li>
+       <li>All size presets + unlimited custom</li>
+       <li>HEIC / JPG / PNG / WebP convert</li>
+       <li>Pad, crop, and stretch fit modes</li>
+       <li>All future v1 updates</li>
+     </ul>
+     <a class="cta" style="width:100%;text-align:center" href="#" id="buy">Get the lifetime deal</a>
+     <div class="ltd">▲ Private LTD — limited launch pricing. One-time $29, no subscription. Secure checkout via Lemon Squeezy. <span id="soon">[Checkout goes live once the Cropine store product is set up.]</span></div>
+   </div>
+ </section>
+ <footer>Cropine — a SaaS Factory product · pre-launch. Built by Alfred for Alex, 2026-08-29.</footer>
+</div></body></html>

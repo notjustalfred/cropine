@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cropine — Batch resize & convert images, 100% in your browser</title>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<style>
+  :root{--bg:#0f1214;--panel:#171b1e;--line:#262c30;--txt:#e7ecee;--mut:#94a1a6;--acc:#1f9d78;}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt);height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)}
+  header b{font-size:16px}.tag{color:var(--mut);font-size:12px}
+  .wrap{flex:1;display:flex;min-height:0}
+  aside{width:310px;padding:14px;border-right:1px solid var(--line);overflow:auto;background:var(--panel)}
+  main{flex:1;display:flex;flex-direction:column;min-width:0}
+  #drop{margin:14px;border:2px dashed var(--line);border-radius:12px;padding:34px 12px;text-align:center;color:var(--mut);cursor:pointer}
+  #drop.hot{border-color:var(--acc);color:var(--txt)}
+  #list{flex:1;overflow:auto;padding:0 14px 14px}
+  .file{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+  .file img{width:44px;height:44px;object-fit:cover;border-radius:5px;background:#000}
+  .file .meta{flex:1;min-width:0}
+  .file .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .file .d{color:var(--mut);font-size:12px}
+  .file .rm{color:var(--mut);cursor:pointer;padding:4px 8px}
+  .row{margin-bottom:14px}
+  label{display:block;color:var(--mut);font-size:12px;margin-bottom:5px}
+  .sub{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;border-top:1px solid var(--line);padding-top:14px}
+  .preset{display:flex;align-items:center;gap:8px;padding:5px 0}
+  .preset input{accent-color:var(--acc)}
+  input[type=range]{width:100%}
+  input[type=text],input[type=number],select{background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:7px;border-radius:6px;width:100%}
+  .seg{display:flex;gap:6px}.seg button{flex:1;padding:7px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;cursor:pointer;font-size:12px}
+  .seg button.on{background:var(--acc);border-color:var(--acc)}
+  .cust{display:flex;gap:6px;align-items:center;margin-top:6px}
+  .btn{width:100%;padding:12px;background:var(--acc);border:none;color:#fff;font-weight:600;border-radius:8px;cursor:pointer;font-size:14px}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn.sec{background:var(--bg);border:1px solid var(--line)}
+  .keyrow{display:flex;gap:6px}
+  .hint{font-size:11px;color:var(--mut);margin-top:6px}
+  .pill{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--acc);color:#fff}
+  .pill.free{background:#3a4147}
+  #status{padding:10px 16px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;min-height:20px}
+  #bar{height:4px;background:var(--acc);width:0;transition:width .2s}
+  a{color:var(--acc)}
+</style>
+</head>
+<body>
+<header>
+  <b>◧ Cropine</b><span class="tag">Batch resize &amp; convert — 100% in your browser, nothing uploaded</span>
+  <span style="flex:1"></span><span id="count" class="tag"></span>
+  <span id="planPill" class="pill free">FREE</span>
+</header>
+<div class="wrap">
+  <aside>
+    <div class="sub" style="margin-top:0;border:0;padding:0">Output sizes (pick any)</div>
+    <div id="presets"></div>
+    <div class="row">
+      <label>Add custom size</label>
+      <div class="cust">
+        <input type="number" id="cw" placeholder="W" style="width:70px"><span>×</span>
+        <input type="number" id="ch" placeholder="H" style="width:70px">
+        <button class="btn sec" id="addC" style="width:auto;padding:7px 10px">Add</button>
+      </div>
+    </div>
+
+    <div class="sub">Fit mode</div>
+    <div class="seg" id="fit">
+      <button data-f="contain" class="on">Pad (no distort)</button>
+      <button data-f="cover">Crop to fill</button>
+      <button data-f="stretch">Stretch</button>
+    </div>
+    <div class="hint">Pad keeps aspect ratio and never distorts — the default.</div>
+
+    <div class="sub">Format &amp; quality</div>
+    <div class="row"><select id="fmt">
+      <option value="image/jpeg">JPG</option>
+      <option value="image/png">PNG</option>
+      <option value="image/webp">WebP</option>
+    </select></div>
+    <div class="row"><label>Quality <span id="qv">0.9</span></label><input type="range" id="q" min="0.3" max="1" step="0.05" value="0.9"></div>
+    <div class="row"><label>Pad color (for Pad mode)</label><input type="color" id="pad" value="#ffffff" style="height:32px;padding:2px"></div>
+
+    <div class="sub">Naming</div>
+    <div class="row"><input type="text" id="pat" value="{name}-{w}x{h}"><div class="hint">Tokens: {name} {w} {h} {ext}</div></div>
+
+    <div class="sub">License</div>
+    <div class="row">
+      <div class="keyrow"><input type="text" id="key" placeholder="paste license key"><button class="btn sec" style="width:auto" id="apply">Apply</button></div>
+      <div class="hint" id="keyStat"></div>
+      <div class="hint" id="freeNote"></div>
+      <div class="hint">No key? <a href="#" id="buy" target="_blank">Get a lifetime license — $29, one-time</a></div>
+    </div>
+  </aside>
+  <main>
+    <div id="drop">Drop images here · click to browse · JPG · PNG · WebP · <b>HEIC</b><br><span class="hint">Everything runs on your device. Nothing is uploaded.</span></div>
+    <input type="file" id="file" accept="image/*,.heic,.heif" multiple hidden>
+    <div id="list"></div>
+    <div style="padding:14px;border-top:1px solid var(--line)">
+      <button class="btn" id="go" disabled>Resize &amp; download all (.zip)</button>
+    </div>
+    <div id="bar"></div>
+    <div id="status">Ready.</div>
+  </main>
+</div>
+<script>
+const FREE_LIMIT=5; // free tier: up to 5 files per batch
+const CHECKOUT_URL="#"; // set once Cropine LS product exists
+const PRESETS=[
+  {n:"Instagram 1080²",w:1080,h:1080},{n:"IG Portrait 1080×1350",w:1080,h:1350},
+  {n:"IG Story 1080×1920",w:1080,h:1920},{n:"X / Twitter 1600×900",w:1600,h:900},
+  {n:"OG image 1200×630",w:1200,h:630},{n:"Web 1920 wide",w:1920,h:0},
+  {n:"Thumb 400²",w:400,h:400},{n:"Email 600 wide",w:600,h:0},
+];
+const S={files:[],sizes:new Set(["Instagram 1080²"]),fit:"contain",fmt:"image/jpeg",q:0.9,pad:"#ffffff",pat:"{name}-{w}x{h}",licensed:false};
+// build preset checkboxes
+const pE=document.getElementById('presets');
+PRESETS.forEach(p=>{const id='p_'+p.w+'_'+p.h;const d=document.createElement('label');d.className='preset';
+  d.innerHTML=`<input type="checkbox" ${S.sizes.has(p.n)?'checked':''}> ${p.n}${p.h===0?' <span style="color:var(--mut)">(auto H)</span>':''}`;
+  d.querySelector('input').onchange=e=>{e.target.checked?S.sizes.add(p.n):S.sizes.delete(p.n)};
+  pE.appendChild(d);});
+const customSizes=[];
+document.getElementById('addC').onclick=()=>{const w=+document.getElementById('cw').value,h=+document.getElementById('ch').value;if(!w){return}
+  const name=`Custom ${w}×${h||'auto'}`;if(PRESETS.find(p=>p.n===name)||customSizes.find(c=>c.n===name))return;
+  const p={n:name,w,h:h||0};customSizes.push(p);S.sizes.add(name);
+  const d=document.createElement('label');d.className='preset';d.innerHTML=`<input type="checkbox" checked> ${name}`;
+  d.querySelector('input').onchange=e=>{e.target.checked?S.sizes.add(name):S.sizes.delete(name)};pE.appendChild(d);
+  document.getElementById('cw').value='';document.getElementById('ch').value='';};
+function allSizes(){return [...PRESETS,...customSizes].filter(p=>S.sizes.has(p.n))}
+// controls
+document.querySelectorAll('#fit button').forEach(b=>b.onclick=()=>{S.fit=b.dataset.f;document.querySelectorAll('#fit button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+document.getElementById('fmt').onchange=e=>S.fmt=e.target.value;
+document.getElementById('q').oninput=e=>{S.q=+e.target.value;document.getElementById('qv').textContent=e.target.value};
+document.getElementById('pad').oninput=e=>S.pad=e.target.value;
+document.getElementById('pat').oninput=e=>S.pat=e.target.value;
+// file input
+const drop=document.getElementById('drop'),fileEl=document.getElementById('file');
+drop.onclick=()=>fileEl.click();
+fileEl.onchange=e=>addFiles([...e.target.files]);
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('hot')};
+drop.ondragleave=()=>drop.classList.remove('hot');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('hot');addFiles([...e.dataTransfer.files])};
+function isHeic(f){return /heic|heif/i.test(f.type)|| /\.(heic|heif)$/i.test(f.name)}
+async function toBitmap(f){
+  if(isHeic(f)){
+    try{const blob=await heic2any({blob:f,toType:"image/jpeg",quality:0.92});return await createImageBitmap(Array.isArray(blob)?blob[0]:blob);}
+    catch(err){throw new Error("HEIC decode failed");}
+  }
+  return await createImageBitmap(f);
+}
+async function addFiles(fs){
+  fs=fs.filter(f=>f.type.startsWith('image')||isHeic(f));
+  for(const f of fs){
+    const item={file:f,name:f.name.replace(/\.[^.]+$/,''),bmp:null,err:null};
+    S.files.push(item);
+    renderList();
+    try{item.bmp=await toBitmap(f);}catch(e){item.err=e.message;}
+    renderList();
+  }
+  updateGate();
+}
+function renderList(){
+  const L=document.getElementById('list');L.innerHTML='';
+  S.files.forEach((it,i)=>{
+    const d=document.createElement('div');d.className='file';
+    let thumb='';if(it.bmp){const c=document.createElement('canvas');c.width=c.height=44;const x=c.getContext('2d');const s=Math.min(44/it.bmp.width,44/it.bmp.height);const w=it.bmp.width*s,h=it.bmp.height*s;x.drawImage(it.bmp,(44-w)/2,(44-h)/2,w,h);thumb=c.toDataURL();}
+    d.innerHTML=`<img src="${thumb}"><div class="meta"><div class="n">${it.file.name}</div><div class="d">${it.err?('<span style=color:#f56>'+it.err+'</span>'):it.bmp?(it.bmp.width+'×'+it.bmp.height):'decoding…'}</div></div><div class="rm">✕</div>`;
+    d.querySelector('.rm').onclick=()=>{S.files.splice(i,1);renderList();updateGate()};
+    L.appendChild(d);
+  });
+  document.getElementById('count').textContent=S.files.length?S.files.length+' file'+(S.files.length>1?'s':''):'';
+}
+function updateGate(){
+  const ok=S.files.some(f=>f.bmp);
+  const over=!S.licensed && S.files.length>FREE_LIMIT;
+  document.getElementById('go').disabled=!ok||over;
+  document.getElementById('freeNote').textContent=S.licensed?'':`Free tier: up to ${FREE_LIMIT} files per batch (${S.files.length}/${FREE_LIMIT}).`;
+  document.getElementById('freeNote').style.color=over?'#f56':'var(--mut)';
+}
+// resize one bitmap to target
+function resizeOne(bmp,tw,th){
+  let W=tw,H=th;
+  if(H===0)H=Math.round(bmp.height*(W/bmp.width)); // auto height
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  x.imageSmoothingQuality='high';
+  if(S.fit==='stretch'){x.drawImage(bmp,0,0,W,H);}
+  else if(S.fit==='cover'){const s=Math.max(W/bmp.width,H/bmp.height);const dw=bmp.width*s,dh=bmp.height*s;x.drawImage(bmp,(W-dw)/2,(H-dh)/2,dw,dh);}
+  else{ // contain / pad
+    if(S.fmt==='image/jpeg'){x.fillStyle=S.pad;x.fillRect(0,0,W,H);}
+    const s=Math.min(W/bmp.width,H/bmp.height);const dw=bmp.width*s,dh=bmp.height*s;x.drawImage(bmp,(W-dw)/2,(H-dh)/2,dw,dh);
+  }
+  return c;
+}
+function ext(){return S.fmt==='image/png'?'png':S.fmt==='image/webp'?'webp':'jpg'}
+function fname(base,w,h){return S.pat.replace(/{name}/g,base).replace(/{w}/g,w).replace(/{h}/g,h).replace(/{ext}/g,ext())+'.'+ext()}
+document.getElementById('go').onclick=async()=>{
+  const sizes=allSizes();if(!sizes.length){setStatus('Pick at least one output size.');return}
+  const usable=S.files.filter(f=>f.bmp);
+  const zip=new JSZip();let done=0;const total=usable.length*sizes.length;
+  document.getElementById('go').disabled=true;
+  for(const it of usable){
+    for(const sz of sizes){
+      const canvas=resizeOne(it.bmp,sz.w,sz.h);
+      const th=sz.h===0?Math.round(it.bmp.height*(sz.w/it.bmp.width)):sz.h;
+      const blob=await new Promise(r=>canvas.toBlob(r,S.fmt,S.q));
+      zip.file(fname(it.name,sz.w,th),blob);
+      done++;document.getElementById('bar').style.width=(done/total*100)+'%';
+      setStatus(`Processing ${done}/${total}…`);
+      await new Promise(r=>setTimeout(r)); // yield UI
+    }
+  }
+  setStatus('Zipping…');
+  const out=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(out);a.download='cropine-export.zip';a.click();
+  setStatus(`Done — ${total} images in cropine-export.zip. Nothing was uploaded.`);
+  document.getElementById('bar').style.width='0';document.getElementById('go').disabled=false;
+};
+function setStatus(t){document.getElementById('status').textContent=t}
+// license — live Lemon Squeezy validation (public endpoint, no secret key)
+async function validKeyLS(key){
+  try{const r=await fetch('https://api.lemonsqueezy.com/v1/licenses/validate',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({license_key:key.trim()})});const d=await r.json();return d.valid===true&&d.license_key&&d.license_key.status!=='disabled'&&d.license_key.status!=='expired';}catch(e){return false}
+}
+try{const s=localStorage.getItem('cropine_license');if(s)document.getElementById('key').value=s;}catch(e){}
+document.getElementById('apply').onclick=async()=>{
+  const k=document.getElementById('key').value.trim();const st=document.getElementById('keyStat');const p=document.getElementById('planPill');
+  if(!k){st.textContent='Enter your license key.';st.style.color='#f56';return}
+  if(CHECKOUT_URL==="#"){st.textContent='License validation goes live at launch.';st.style.color='var(--mut)';return}
+  st.textContent='Checking…';st.style.color='var(--mut)';
+  const ok=await validKeyLS(k);S.licensed=ok;
+  p.textContent=ok?'PRO':'FREE';p.className='pill'+(ok?'':' free');
+  st.textContent=ok?'✓ Licensed — unlimited batch unlocked.':'Invalid or inactive key.';st.style.color=ok?'#3fbf8f':'#f56';
+  try{ok?localStorage.setItem('cropine_license',k):localStorage.removeItem('cropine_license');}catch(e){}
+  updateGate();
+};
+document.getElementById('buy').onclick=e=>{if(CHECKOUT_URL==="#"){e.preventDefault();setStatus('Checkout link goes live at launch.')}else{document.getElementById('buy').href=CHECKOUT_URL}};
+updateGate();
+</script>
+</body>
+</html>
