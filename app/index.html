@@ -71,7 +71,7 @@
       <button data-f="cover">Crop to fill</button>
       <button data-f="stretch">Stretch</button>
     </div>
-    <div class="hint">Pad keeps aspect ratio and never distorts — the default.</div>
+    <div class="hint" id="fitHint">Pad keeps aspect ratio and never distorts — the default.</div>
 
     <div class="sub">Format &amp; quality</div>
     <div class="row"><select id="fmt">
@@ -80,7 +80,7 @@
       <option value="image/webp">WebP</option>
     </select></div>
     <div class="row"><label>Quality <span id="qv">0.9</span></label><input type="range" id="q" min="0.3" max="1" step="0.05" value="0.9"></div>
-    <div class="row"><label>Pad color (for Pad mode)</label><input type="color" id="pad" value="#ffffff" style="height:32px;padding:2px"></div>
+    <div class="row" id="padRow"><label>Pad color (for Pad mode)</label><input type="color" id="pad" value="#ffffff" style="height:32px;padding:2px"></div>
 
     <div class="sub">Naming</div>
     <div class="row"><input type="text" id="pat" value="{name}-{w}x{h}"><div class="hint">Tokens: {name} {w} {h} {ext}</div></div>
@@ -129,7 +129,7 @@ document.getElementById('addC').onclick=()=>{const w=+document.getElementById('c
   document.getElementById('cw').value='';document.getElementById('ch').value='';};
 function allSizes(){return [...PRESETS,...customSizes].filter(p=>S.sizes.has(p.n))}
 // controls
-document.querySelectorAll('#fit button').forEach(b=>b.onclick=()=>{S.fit=b.dataset.f;document.querySelectorAll('#fit button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+document.querySelectorAll('#fit button').forEach(b=>b.onclick=()=>{S.fit=b.dataset.f;document.querySelectorAll('#fit button').forEach(x=>x.classList.remove('on'));b.classList.add('on');const isPad=S.fit==='contain';document.getElementById('padRow').style.display=isPad?'':'none';const hints={contain:'Pad keeps aspect ratio and never distorts — the default.',cover:'Crop to fill: zooms in and trims edges to exactly fill the target.',stretch:'Stretch: scales to fit exactly, may distort the image.'};document.getElementById('fitHint').textContent=hints[S.fit];});
 document.getElementById('fmt').onchange=e=>S.fmt=e.target.value;
 document.getElementById('q').oninput=e=>{S.q=+e.target.value;document.getElementById('qv').textContent=e.target.value};
 document.getElementById('pad').oninput=e=>S.pad=e.target.value;
